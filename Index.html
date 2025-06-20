@@ -414,62 +414,50 @@
           geolocation: geolocation
         };
         
-        // Simulasi pengiriman data ke Google Sheets
-        // Dalam implementasi nyata, ini akan memanggil Google Apps Script
-        console.log('Data yang akan dikirim:', formData);
-        
-        // Simulasi delay untuk mengirim data
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Sembunyikan loading
-        document.getElementById('loading').style.display = 'none';
-        
-        // Tampilkan pesan sukses
-        document.getElementById('successMessage').style.display = 'block';
-        
-        // Redirect ke LinkedIn setelah 3 detik
-        setTimeout(() => {
-          window.open('https://www.linkedin.com/in/professional-umar/', '_blank');
-        }, 3000);
+        // Kirim data ke Google Apps Script
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onFailure)
+          .submitForm(formData);
         
       } catch (error) {
         console.error('Error:', error);
-        
-        // Sembunyikan loading
-        document.getElementById('loading').style.display = 'none';
-        
-        // Aktifkan kembali tombol submit
-        document.getElementById('submitBtn').disabled = false;
-        
-        alert('Terjadi kesalahan saat mengirim data. Silakan coba lagi.');
+        onFailure(error);
       }
     });
     
-    // Fungsi untuk mengirim data ke Google Sheets (untuk implementasi nyata)
-    function sendToGoogleSheets(data) {
-      // Kode ini akan dipanggil dari Google Apps Script
-      google.script.run
-        .withSuccessHandler(onSuccess)
-        .withFailureHandler(onFailure)
-        .submitForm(data);
-    }
-    
     // Callback sukses
     function onSuccess(result) {
+      console.log('Success result:', result);
+      
+      // Sembunyikan loading
       document.getElementById('loading').style.display = 'none';
+      
+      // Tampilkan pesan sukses
       document.getElementById('successMessage').style.display = 'block';
       
+      // Redirect ke LinkedIn setelah 3 detik
       setTimeout(() => {
-        window.open('https://www.linkedin.com/in/professional-umar/', '_blank');
+        if (result.redirectUrl) {
+          window.open(result.redirectUrl, '_blank');
+        } else {
+          window.open('https://www.linkedin.com/in/professional-umar/', '_blank');
+        }
       }, 3000);
     }
     
     // Callback error
     function onFailure(error) {
       console.error('Error:', error);
+      
+      // Sembunyikan loading
       document.getElementById('loading').style.display = 'none';
+      
+      // Aktifkan kembali tombol submit
       document.getElementById('submitBtn').disabled = false;
-      alert('Terjadi kesalahan saat mengirim data. Silakan coba lagi.');
+      
+      // Tampilkan pesan error
+      alert('Terjadi kesalahan saat mengirim data: ' + (error.message || error.toString()) + '. Silakan coba lagi.');
     }
   </script>
 </body>
