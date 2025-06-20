@@ -1,8 +1,8 @@
 # Panduan Implementasi Sistem "What Can I Do For You?" 
-## Lomba Google Frontend Developer
+
 
 ### 📋 Ringkasan Proyek
-Sistem formulir kontak yang mengumpulkan data pengguna dan menyimpannya ke Google Sheets dengan fitur geolocation dan redirect otomatis ke LinkedIn.
+Sistem formulir kontak yang mengumpulkan data pengguna dan menyimpannya ke Google Sheets dengan fitur geolocation dan redirect otomatis ke LinkedIn. Output: [LINK](https://script.google.com/macros/s/AKfycbxZ14rPXxBT6K8RWwliIzF08uMn1CCBh2wATTotjK0q_8tbp4gaoK6CW8yTJj1kx49g/exec)
 
 ---
 
