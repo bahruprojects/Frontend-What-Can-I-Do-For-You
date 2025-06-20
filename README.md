@@ -229,4 +229,4 @@ Jika ada pertanyaan atau issues:
 3. Verify spreadsheet permissions
 4. Test dengan data dummy menggunakan `testSubmission()`
 
-**Good luck dengan lomba Google Frontend Developer! 🚀**
+**Good luck! 🚀**
