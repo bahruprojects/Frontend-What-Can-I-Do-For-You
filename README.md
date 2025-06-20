@@ -5,9 +5,9 @@
 Sistem formulir kontak yang mengumpulkan data pengguna dan menyimpannya ke Google Sheets dengan fitur geolocation dan redirect otomatis ke LinkedIn. 
 
 
-### Input : 
-[LINK](https://docs.google.com/spreadsheets/d/1B5EU2OLXF_7C9ZksUhlp3RAIFFOrKd53aPnrQziArrY/edit?gid=745019055#gid=745019055).
 ### Output : 
+[LINK](https://docs.google.com/spreadsheets/d/1B5EU2OLXF_7C9ZksUhlp3RAIFFOrKd53aPnrQziArrY/edit?gid=745019055#gid=745019055).
+### Input : 
 [LINK](https://script.google.com/macros/s/AKfycbxZ14rPXxBT6K8RWwliIzF08uMn1CCBh2wATTotjK0q_8tbp4gaoK6CW8yTJj1kx49g/exec).
 
 ---
