@@ -1,9 +1,8 @@
 /**
  * Google Apps Script Backend untuk Sistem "What Can I Do For You?"
- * Lomba Google Frontend Developer
+ * 
  * 
  * File: Code.gs
- * Version: 2.0 - Improved
  */
 
 // Konstanta untuk Spreadsheet
@@ -37,96 +36,67 @@ function include(filename) {
  */
 function submitForm(formData) {
   try {
-    // Log incoming data for debugging
-    console.log('Received form data:', JSON.stringify(formData, null, 2));
-    
     // Validasi input data
     const validationResult = validateFormData(formData);
     if (!validationResult.isValid) {
       throw new Error(validationResult.message);
     }
     
-    // Dapatkan spreadsheet dan sheet dengan error handling
-    let spreadsheet;
-    try {
-      spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    } catch (error) {
-      throw new Error(`Tidak dapat mengakses spreadsheet: ${error.message}`);
-    }
-    
-    let sheet = spreadsheet.getSheetByName(SHEET_NAME);
+    // Dapatkan spreadsheet dan sheet
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = spreadsheet.getSheetByName(SHEET_NAME);
     
     // Jika sheet tidak ada, buat sheet baru
     if (!sheet) {
-      console.log(`Sheet '${SHEET_NAME}' tidak ditemukan, membuat sheet baru...`);
-      sheet = spreadsheet.insertSheet(SHEET_NAME);
-      setupSheetHeaders(sheet);
+      const newSheet = spreadsheet.insertSheet(SHEET_NAME);
+      setupSheetHeaders(newSheet);
     }
     
     // Setup header jika belum ada
     if (sheet.getRange('A1').getValue() === '') {
-      console.log('Setting up sheet headers...');
       setupSheetHeaders(sheet);
     }
     
     // Siapkan data untuk dimasukkan ke spreadsheet
     const rowData = prepareRowData(formData);
     
-    // Tambahkan data ke baris baru dengan error handling
+    // Tambahkan data ke baris baru
     const lastRow = sheet.getLastRow();
     const newRow = lastRow + 1;
     
-    try {
-      // Masukkan data ke spreadsheet
-      sheet.getRange(newRow, 1, 1, rowData.length).setValues([rowData]);
-      
-      // Format baris baru
-      formatNewRow(sheet, newRow);
-      
-    } catch (error) {
-      throw new Error(`Gagal menyimpan data ke spreadsheet: ${error.message}`);
-    }
+    // Masukkan data ke spreadsheet
+    sheet.getRange(newRow, 1, 1, rowData.length).setValues([rowData]);
+    
+    // Format tanggal jika diperlukan
+    formatNewRow(sheet, newRow);
     
     // Log aktivitas
-    console.log(`Data berhasil ditambahkan ke baris ${newRow}`);
+    console.log(`Data berhasil ditambahkan ke baris ${newRow}:`, formData);
     
-    // Return success response
     return {
       success: true,
       message: 'Data berhasil disimpan',
       redirectUrl: LINKEDIN_URL,
       rowNumber: newRow,
-      timestamp: new Date().toISOString(),
-      submissionId: generateSubmissionId(newRow)
+      timestamp: new Date().toISOString()
     };
     
   } catch (error) {
     console.error('Error dalam submitForm:', error);
-    
-    // Return error response with more details
     return {
       success: false,
       message: `Terjadi kesalahan: ${error.message}`,
-      error: error.toString(),
-      timestamp: new Date().toISOString()
+      error: error.toString()
     };
   }
 }
 
 /**
- * Fungsi untuk validasi data form dengan improved validation
+ * Fungsi untuk validasi data form
  * @param {Object} formData - data form yang akan divalidasi
  * @return {Object} hasil validasi
  */
 function validateFormData(formData) {
-  // Cek apakah formData ada
-  if (!formData || typeof formData !== 'object') {
-    return {
-      isValid: false,
-      message: 'Data form tidak valid atau kosong'
-    };
-  }
-  
   const requiredFields = [
     'yourName',
     'yourInstitutionType', 
@@ -147,21 +117,20 @@ function validateFormData(formData) {
     }
   }
   
-  // Validasi email format (improved regex)
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-  if (!emailRegex.test(formData.yourEmail.trim())) {
+  // Validasi email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(formData.yourEmail)) {
     return {
       isValid: false,
       message: 'Format email tidak valid'
     };
   }
   
-  // Validasi nomor telepon (allow + and spaces)
-  const phoneRegex = /^[\d\s\+\-\(\)]+$/;
-  if (!phoneRegex.test(formData.yourPhoneNumber.trim())) {
+  // Validasi nomor telepon (hanya angka)
+  if (!/^\d+$/.test(formData.yourPhoneNumber)) {
     return {
       isValid: false,
-      message: 'Format nomor telepon tidak valid'
+      message: 'Nomor telepon hanya boleh berisi angka'
     };
   }
   
@@ -189,28 +158,6 @@ function validateFormData(formData) {
     };
   }
   
-  // Validasi panjang nama (reasonable limits)
-  if (formData.yourName.trim().length > 100) {
-    return {
-      isValid: false,
-      message: 'Nama terlalu panjang (maksimal 100 karakter)'
-    };
-  }
-  
-  if (formData.yourInstitutionName.trim().length > 150) {
-    return {
-      isValid: false,
-      message: 'Nama institusi terlalu panjang (maksimal 150 karakter)'
-    };
-  }
-  
-  if (formData.yourCity.trim().length > 50) {
-    return {
-      isValid: false,
-      message: 'Nama kota terlalu panjang (maksimal 50 karakter)'
-    };
-  }
-  
   return {
     isValid: true,
     message: 'Data valid'
@@ -231,29 +178,24 @@ function setupSheetHeaders(sheet) {
     'YourCity',                          // F1
     'Whatisyourreasonforcontactingme?',  // G1
     'Timestamp',                         // H1
-    'Geolocation',                       // I1
-    'SubmissionID'                       // J1 - Added for tracking
+    'Geolocation'                        // I1
   ];
   
   // Set header di baris pertama
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   
-  // Format header dengan improved styling
+  // Format header
   const headerRange = sheet.getRange(1, 1, 1, headers.length);
   headerRange.setFontWeight('bold');
   headerRange.setBackground('#4285f4');
   headerRange.setFontColor('white');
   headerRange.setHorizontalAlignment('center');
-  headerRange.setVerticalAlignment('middle');
-  headerRange.setWrap(true);
   
   // Auto-resize kolom
   sheet.autoResizeColumns(1, headers.length);
   
   // Freeze header row
   sheet.setFrozenRows(1);
-  
-  console.log('Sheet headers setup completed');
 }
 
 /**
@@ -263,46 +205,20 @@ function setupSheetHeaders(sheet) {
  */
 function prepareRowData(formData) {
   // Buat timestamp jika belum ada
-  const timestamp = formData.timestamp ? new Date(formData.timestamp) : new Date();
+  const timestamp = formData.timestamp || new Date().toISOString();
   
-  // Generate submission ID
-  const submissionId = generateSubmissionId();
-  
-  // Siapkan data sesuai urutan kolom (A1 sampai J1)
+  // Siapkan data sesuai urutan kolom (A1 sampai I1)
   return [
-    sanitizeText(formData.yourName),                          // A - YourName
-    formData.yourInstitutionType,                            // B - YourInstitutionType  
-    sanitizeText(formData.yourInstitutionName),              // C - YourInstitutionName
-    sanitizeText(formData.yourPhoneNumber),                  // D - YourPhoneNumber
-    formData.yourEmail.trim().toLowerCase(),                 // E - YourEmail
-    sanitizeText(formData.yourCity),                         // F - YourCity
-    sanitizeText(formData.whatIsYourReasonForContactingMe),  // G - Reason
-    timestamp,                                               // H - Timestamp
-    formData.geolocation || 'Not provided',                  // I - Geolocation
-    submissionId                                             // J - SubmissionID
+    formData.yourName,                          // A - YourName
+    formData.yourInstitutionType,              // B - YourInstitutionType  
+    formData.yourInstitutionName,              // C - YourInstitutionName
+    formData.yourPhoneNumber,                  // D - YourPhoneNumber
+    formData.yourEmail,                        // E - YourEmail
+    formData.yourCity,                         // F - YourCity
+    formData.whatIsYourReasonForContactingMe,  // G - Whatisyourreasonforcontactingme?
+    new Date(timestamp),                       // H - Timestamp
+    formData.geolocation || 'Not provided'     // I - Geolocation
   ];
-}
-
-/**
- * Fungsi untuk membersihkan teks input
- * @param {string} text - teks yang akan dibersihkan
- * @return {string} teks yang sudah dibersihkan
- */
-function sanitizeText(text) {
-  if (!text) return '';
-  return text.toString().trim().replace(/\s+/g, ' '); // Remove extra whitespaces
-}
-
-/**
- * Fungsi untuk generate submission ID
- * @param {number} rowNumber - nomor baris (optional)
- * @return {string} submission ID
- */
-function generateSubmissionId(rowNumber = null) {
-  const timestamp = new Date().getTime();
-  const random = Math.floor(Math.random() * 1000);
-  const row = rowNumber || '';
-  return `SUB-${timestamp}-${random}${row}`;
 }
 
 /**
@@ -311,36 +227,26 @@ function generateSubmissionId(rowNumber = null) {
  * @param {number} rowNumber - nomor baris yang akan diformat
  */
 function formatNewRow(sheet, rowNumber) {
-  try {
-    const range = sheet.getRange(rowNumber, 1, 1, 10); // Updated to 10 columns
-    
-    // Set border
-    range.setBorder(true, true, true, true, true, true);
-    
-    // Format timestamp column (H)
-    const timestampCell = sheet.getRange(rowNumber, 8);
-    timestampCell.setNumberFormat('dd/mm/yyyy hh:mm:ss');
-    
-    // Format phone number column (D) sebagai text
-    const phoneCell = sheet.getRange(rowNumber, 4);
-    phoneCell.setNumberFormat('@');
-    
-    // Format email column (E) untuk lowercase
-    const emailCell = sheet.getRange(rowNumber, 5);
-    emailCell.setNumberFormat('@');
-    
-    // Auto-resize jika diperlukan
-    sheet.autoResizeColumns(1, 10);
-    
-  } catch (error) {
-    console.error('Error formatting new row:', error);
-    // Don't throw error, just log it
-  }
+  const range = sheet.getRange(rowNumber, 1, 1, 9);
+  
+  // Set border
+  range.setBorder(true, true, true, true, true, true);
+  
+  // Format timestamp column (H)
+  const timestampCell = sheet.getRange(rowNumber, 8);
+  timestampCell.setNumberFormat('dd/mm/yyyy hh:mm:ss');
+  
+  // Format phone number column (D) sebagai text
+  const phoneCell = sheet.getRange(rowNumber, 4);
+  phoneCell.setNumberFormat('@');
+  
+  // Auto-resize jika diperlukan
+  sheet.autoResizeColumns(1, 9);
 }
 
 /**
  * Fungsi untuk mendapatkan semua data dari spreadsheet
- * Improved with better error handling
+ * Bisa digunakan untuk debugging atau laporan
  * @return {Array} array data dari spreadsheet
  */
 function getAllData() {
@@ -349,29 +255,14 @@ function getAllData() {
     const sheet = spreadsheet.getSheetByName(SHEET_NAME);
     
     if (!sheet) {
-      return { 
-        success: false,
-        error: 'Sheet tidak ditemukan' 
-      };
-    }
-    
-    const lastRow = sheet.getLastRow();
-    if (lastRow <= 1) {
-      return {
-        success: true,
-        data: [],
-        totalRows: 0,
-        message: 'Tidak ada data'
-      };
+      return { error: 'Sheet tidak ditemukan' };
     }
     
     const data = sheet.getDataRange().getValues();
     return {
       success: true,
       data: data,
-      totalRows: data.length,
-      headers: data[0],
-      dataRows: data.slice(1)
+      totalRows: data.length
     };
     
   } catch (error) {
@@ -384,7 +275,7 @@ function getAllData() {
 }
 
 /**
- * Fungsi untuk mendapatkan statistik data - Enhanced version
+ * Fungsi untuk mendapatkan statistik data
  * @return {Object} statistik data
  */
 function getDataStatistics() {
@@ -393,46 +284,30 @@ function getDataStatistics() {
     const sheet = spreadsheet.getSheetByName(SHEET_NAME);
     
     if (!sheet) {
-      return { 
-        success: false,
-        error: 'Sheet tidak ditemukan' 
-      };
-    }
-    
-    const lastRow = sheet.getLastRow();
-    if (lastRow <= 1) {
-      return {
-        success: true,
-        totalSubmissions: 0,
-        institutionTypes: {},
-        cities: {},
-        message: 'Tidak ada data untuk statistik'
-      };
+      return { error: 'Sheet tidak ditemukan' };
     }
     
     const data = sheet.getDataRange().getValues();
-    const submissions = data.slice(1); // Skip header
     
+    if (data.length <= 1) {
+      return {
+        totalSubmissions: 0,
+        institutionTypes: {},
+        cities: {}
+      };
+    }
+    
+    // Hitung statistik
+    const submissions = data.slice(1); // Skip header
     const institutionTypes = {};
     const cities = {};
-    const monthlyStats = {};
     
     submissions.forEach(row => {
       const institutionType = row[1]; // Column B
       const city = row[5]; // Column F
-      const timestamp = row[7]; // Column H
       
-      // Count institution types
       institutionTypes[institutionType] = (institutionTypes[institutionType] || 0) + 1;
-      
-      // Count cities
       cities[city] = (cities[city] || 0) + 1;
-      
-      // Count monthly submissions
-      if (timestamp instanceof Date) {
-        const monthYear = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}`;
-        monthlyStats[monthYear] = (monthlyStats[monthYear] || 0) + 1;
-      }
     });
     
     return {
@@ -440,9 +315,7 @@ function getDataStatistics() {
       totalSubmissions: submissions.length,
       institutionTypes: institutionTypes,
       cities: cities,
-      monthlyStats: monthlyStats,
-      lastSubmission: submissions[submissions.length - 1][7], // Timestamp
-      firstSubmission: submissions[0][7] // Timestamp
+      lastSubmission: submissions[submissions.length - 1][7] // Timestamp
     };
     
   } catch (error) {
@@ -455,66 +328,22 @@ function getDataStatistics() {
 }
 
 /**
- * Fungsi untuk testing - Enhanced version
+ * Fungsi untuk testing - bisa dihapus di production
  */
 function testSubmission() {
   const testData = {
-    yourName: 'Test User Enhanced',
+    yourName: 'Test User',
     yourInstitutionType: 'Personal',
-    yourInstitutionName: 'Test Institution Enhanced',
-    yourPhoneNumber: '+62 812-3456-7890',
-    yourEmail: 'test.enhanced@example.com',
+    yourInstitutionName: 'Test Institution',
+    yourPhoneNumber: '081234567890',
+    yourEmail: 'test@example.com',
     yourCity: 'Jakarta',
-    whatIsYourReasonForContactingMe: 'This is an enhanced test submission for the Google Frontend Developer competition with improved validation and error handling.',
+    whatIsYourReasonForContactingMe: 'This is a test submission for the Google Frontend Developer competition.',
     timestamp: new Date().toISOString(),
     geolocation: '-6.2088, 106.8456'
   };
   
-  console.log('Starting enhanced test submission...');
   const result = submitForm(testData);
-  console.log('Enhanced test result:', result);
+  console.log('Test result:', result);
   return result;
-}
-
-/**
- * Fungsi untuk cleanup data lama (optional utility)
- * @param {number} daysOld - hapus data lebih lama dari X hari
- */
-function cleanupOldData(daysOld = 365) {
-  try {
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = spreadsheet.getSheetByName(SHEET_NAME);
-    
-    if (!sheet) {
-      return { success: false, error: 'Sheet tidak ditemukan' };
-    }
-    
-    const data = sheet.getDataRange().getValues();
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-    
-    let deletedRows = 0;
-    
-    // Loop from bottom to top to avoid index shifting
-    for (let i = data.length - 1; i >= 1; i--) {
-      const timestamp = data[i][7]; // Column H
-      if (timestamp instanceof Date && timestamp < cutoffDate) {
-        sheet.deleteRow(i + 1);
-        deletedRows++;
-      }
-    }
-    
-    return {
-      success: true,
-      deletedRows: deletedRows,
-      message: `Deleted ${deletedRows} old records`
-    };
-    
-  } catch (error) {
-    console.error('Error in cleanupOldData:', error);
-    return {
-      success: false,
-      error: error.toString()
-    };
-  }
 }
