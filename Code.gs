@@ -2,13 +2,14 @@
  * Google Apps Script Backend untuk Sistem "What Can I Do For You?"
  * 
  * 
- * File: Code.gs
+ * File: Code.gs 
+ * Source Database: https://docs.google.com/spreadsheets/d/1B5EU2OLXF_7C9ZksUhlp3RAIFFOrKd53aPnrQziArrY/edit?usp=sharing
  */
 
 // Konstanta untuk Spreadsheet
 const SPREADSHEET_ID = '1B5EU2OLXF_7C9ZksUhlp3RAIFFOrKd53aPnrQziArrY';
 const SHEET_NAME = 'Sheet2';
-const LINKEDIN_URL = 'https://www.linkedin.com/in/professional-umar/';
+const LINKEDIN_URL = 'https://www.google.com/404';
 
 /**
  * Fungsi untuk melayani halaman HTML
