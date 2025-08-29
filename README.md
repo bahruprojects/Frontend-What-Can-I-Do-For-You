@@ -9,7 +9,7 @@ Sistem formulir kontak yang mengumpulkan data pengguna dan menyimpannya ke Googl
 [LINK](https://docs.google.com/spreadsheets/d/1B5EU2OLXF_7C9ZksUhlp3RAIFFOrKd53aPnrQziArrY/edit?gid=745019055#gid=745019055).
 
 ### Input : 
-[LINK](https://script.google.com/macros/s/AKfycbwYYHvzXjUxFq4AC3jpHt2_EWXSJ9j5ZwgHessy9bbzmlw4bMxhlvVnPHZrj9CjJTLP/exec).
+[LINK](https://script.google.com/macros/s/AKfycbwOO7k9b3Irxz-oLOStBhu1toXO57qldG0xtLngEnX875N5Je_ICNCGPWXvVyR1zxw/exec).
 
 ---
 
