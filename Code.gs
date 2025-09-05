@@ -8,7 +8,7 @@
 
 // Konstanta untuk Spreadsheet
 const SPREADSHEET_ID = '1B5EU2OLXF_7C9ZksUhlp3RAIFFOrKd53aPnrQziArrY';
-const SHEET_NAME = 'Sheet2';
+const SHEET_NAME = 'MAIN_BUSINESS';
 const LINKEDIN_URL = 'https://www.google.com/404';
 
 /**
@@ -348,3 +348,4 @@ function testSubmission() {
   console.log('Test result:', result);
   return result;
 }
+
