@@ -15,7 +15,7 @@
     
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
+      background: linear-gradient(135deg, #87ceeb 100%, #87ceeb 100%);
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -110,7 +110,7 @@
     .submit-btn {
       width: 100%;
       padding: 15px;
-      background: linear-gradient(135deg, #87ceeb 0%, #4682b4 100%);
+      background: linear-gradient(135deg, #4682b4 100%, #4682b4 100%);
       color: white;
       border: none;
       border-radius: 8px;
@@ -240,10 +240,10 @@
       <!-- Input Alasan Kontak -->
       <div class="form-group">
         <label for="reason">What is your reason for contacting me? *</label>
-        <textarea id="reason" name="reason" required minlength="10" maxlength="300" 
-                  placeholder="Minimal 10 karakter, maksimal 300 karakter"></textarea>
+        <textarea id="reason" name="reason" required minlength="10" maxlength="1000" 
+                  placeholder="Minimal 10 karakter, maksimal 1000 karakter"></textarea>
         <div class="char-count">
-          <span id="charCount">0</span>/300 karakter
+          <span id="charCount">0</span>/1000 karakter
         </div>
         <div class="error" id="reasonError"></div>
       </div>
@@ -462,3 +462,4 @@
   </script>
 </body>
 </html>
+
