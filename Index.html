@@ -239,7 +239,7 @@
       
       <!-- Input Alasan Kontak -->
       <div class="form-group">
-        <label for="reason">What is your reason for contacting me? *</label>
+        <label for="reason">What Is Your Reason For Contacting Me? *</label>
         <textarea id="reason" name="reason" required minlength="10" maxlength="1000" 
                   placeholder="Minimal 10 karakter, maksimal 1000 karakter"></textarea>
         <div class="char-count">
@@ -269,6 +269,64 @@
     
     // Inisialisasi variabel
     let geolocation = '';
+    let deviceInfo = '';
+    let platformInfo = '';
+    
+    // Fungsi untuk mendeteksi device dan platform
+    function detectDeviceAndPlatform() {
+      const userAgent = navigator.userAgent;
+      const platform = navigator.platform;
+      
+      // Deteksi Device Type
+      let device = 'Unknown';
+      if (/tablet|ipad|playbook|silk/i.test(userAgent)) {
+        device = 'Tablet';
+      } else if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent)) {
+        device = 'Mobile';
+      } else {
+        device = 'Desktop';
+      }
+      
+      // Deteksi Platform/OS
+      let detectedPlatform = 'Unknown';
+      if (platform.indexOf('Win') !== -1) {
+        detectedPlatform = 'Windows';
+      } else if (platform.indexOf('Mac') !== -1) {
+        detectedPlatform = 'macOS';
+      } else if (platform.indexOf('Linux') !== -1) {
+        detectedPlatform = 'Linux';
+      } else if (/android/i.test(userAgent)) {
+        detectedPlatform = 'Android';
+      } else if (/iphone|ipad|ipod/i.test(userAgent)) {
+        detectedPlatform = 'iOS';
+      }
+      
+      // Tambahan info browser
+      let browser = 'Unknown';
+      if (userAgent.indexOf('Chrome') > -1) {
+        browser = 'Chrome';
+      } else if (userAgent.indexOf('Firefox') > -1) {
+        browser = 'Firefox';
+      } else if (userAgent.indexOf('Safari') > -1) {
+        browser = 'Safari';
+      } else if (userAgent.indexOf('Edge') > -1) {
+        browser = 'Edge';
+      } else if (userAgent.indexOf('Opera') > -1) {
+        browser = 'Opera';
+      }
+      
+      // Gabungkan informasi
+      deviceInfo = `${device} (${browser})`;
+      platformInfo = `${detectedPlatform} (${platform})`;
+      
+      console.log('Device detected:', deviceInfo);
+      console.log('Platform detected:', platformInfo);
+    }
+    
+    // Jalankan deteksi saat halaman dimuat
+    window.addEventListener('load', function() {
+      detectDeviceAndPlatform();
+    });
     
     // Event listener untuk character count pada textarea
     document.getElementById('reason').addEventListener('input', function() {
@@ -349,8 +407,8 @@
       } else if (reason.length < 10) {
         document.getElementById('reasonError').textContent = 'Alasan minimal 10 karakter';
         isValid = false;
-      } else if (reason.length > 300) {
-        document.getElementById('reasonError').textContent = 'Alasan maksimal 300 karakter';
+      } else if (reason.length > 1000) {
+        document.getElementById('reasonError').textContent = 'Alasan maksimal 1000 karakter';
         isValid = false;
       }
       
@@ -401,6 +459,11 @@
         // Minta izin geolocation setelah submit
         geolocation = await getGeolocation();
         
+        // Pastikan device dan platform info sudah terdeteksi
+        if (!deviceInfo || !platformInfo) {
+          detectDeviceAndPlatform();
+        }
+        
         // Kumpulkan data form
         const formData = {
           yourName: document.getElementById('yourName').value.trim(),
@@ -411,8 +474,12 @@
           yourCity: document.getElementById('city').value.trim(),
           whatIsYourReasonForContactingMe: document.getElementById('reason').value.trim(),
           timestamp: new Date().toISOString(),
-          geolocation: geolocation
+          geolocation: geolocation,
+          device: deviceInfo,
+          platform: platformInfo
         };
+        
+        console.log('Form data to submit:', formData);
         
         // Kirim data ke Google Apps Script
         google.script.run
@@ -462,4 +529,3 @@
   </script>
 </body>
 </html>
-
