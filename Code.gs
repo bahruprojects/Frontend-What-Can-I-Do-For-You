@@ -31,6 +31,76 @@ function include(filename) {
 }
 
 /**
+ * Fungsi untuk mendapatkan IP Address pengguna
+ * @return {string} IP Address
+ */
+function getUserIP() {
+  try {
+    // Menggunakan service eksternal untuk mendapatkan IP
+    const response = UrlFetchApp.fetch('https://api.ipify.org?format=json');
+    const data = JSON.parse(response.getContentText());
+    return data.ip || 'Unknown';
+  } catch (error) {
+    console.error('Error getting IP:', error);
+    return 'Unknown';
+  }
+}
+
+/**
+ * Fungsi untuk mendapatkan informasi network dari IP
+ * @param {string} ip - IP Address
+ * @return {string} Network information
+ */
+function getNetworkInfo(ip) {
+  try {
+    if (ip === 'Unknown' || !ip) return 'Unknown';
+    
+    // Menggunakan ipapi.co untuk mendapatkan informasi network
+    const response = UrlFetchApp.fetch(`https://ipapi.co/${ip}/json/`);
+    const data = JSON.parse(response.getContentText());
+    
+    const isp = data.org || data.asn || 'Unknown ISP';
+    const country = data.country_name || 'Unknown Country';
+    const region = data.region || 'Unknown Region';
+    
+    return `${isp}, ${country}, ${region}`;
+  } catch (error) {
+    console.error('Error getting network info:', error);
+    return 'Unknown';
+  }
+}
+
+/**
+ * Fungsi untuk generate Google Maps URL berdasarkan koordinat
+ * @param {string} geolocation - koordinat dalam format "lat, lng"
+ * @return {string} URL Google Maps
+ */
+function generateGoogleMapsURL(geolocation) {
+  if (!geolocation || geolocation === 'Not provided' || geolocation === 'Location access denied') {
+    return 'No location data';
+  }
+  
+  try {
+    // Parse koordinat
+    const coords = geolocation.split(',').map(coord => coord.trim());
+    if (coords.length === 2) {
+      const lat = parseFloat(coords[0]);
+      const lng = parseFloat(coords[1]);
+      
+      // Validasi koordinat
+      if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return `https://www.google.com/maps?q=${lat},${lng}`;
+      }
+    }
+    
+    return 'Invalid coordinates';
+  } catch (error) {
+    console.error('Error generating Google Maps URL:', error);
+    return 'Error generating URL';
+  }
+}
+
+/**
  * Fungsi utama untuk menangani submission form
  * @param {Object} formData - data dari form HTML
  * @return {Object} response object dengan status dan message
@@ -58,8 +128,13 @@ function submitForm(formData) {
       setupSheetHeaders(sheet);
     }
     
+    // Dapatkan informasi tambahan
+    const userIP = getUserIP();
+    const networkInfo = getNetworkInfo(userIP);
+    const googleMapsURL = generateGoogleMapsURL(formData.geolocation);
+    
     // Siapkan data untuk dimasukkan ke spreadsheet
-    const rowData = prepareRowData(formData);
+    const rowData = prepareRowData(formData, googleMapsURL, userIP, networkInfo);
     
     // Tambahkan data ke baris baru
     const lastRow = sheet.getLastRow();
@@ -179,7 +254,12 @@ function setupSheetHeaders(sheet) {
     'YourCity',                          // F1
     'Whatisyourreasonforcontactingme?',  // G1
     'Timestamp',                         // H1
-    'Geolocation'                        // I1
+    'Geolocation',                       // I1
+    'URL_Google_Maps',                   // J1
+    'IP_Address',                        // K1
+    'Network',                           // L1
+    'Device',                            // M1
+    'Platform'                           // N1
   ];
   
   // Set header di baris pertama
@@ -202,13 +282,16 @@ function setupSheetHeaders(sheet) {
 /**
  * Fungsi untuk menyiapkan data yang akan dimasukkan ke spreadsheet
  * @param {Object} formData - data dari form
+ * @param {string} googleMapsURL - URL Google Maps
+ * @param {string} userIP - IP Address pengguna
+ * @param {string} networkInfo - Informasi network
  * @return {Array} array data untuk satu baris
  */
-function prepareRowData(formData) {
+function prepareRowData(formData, googleMapsURL, userIP, networkInfo) {
   // Buat timestamp jika belum ada
   const timestamp = formData.timestamp || new Date().toISOString();
   
-  // Siapkan data sesuai urutan kolom (A1 sampai I1)
+  // Siapkan data sesuai urutan kolom (A1 sampai N1)
   return [
     formData.yourName,                          // A - YourName
     formData.yourInstitutionType,              // B - YourInstitutionType  
@@ -218,7 +301,12 @@ function prepareRowData(formData) {
     formData.yourCity,                         // F - YourCity
     formData.whatIsYourReasonForContactingMe,  // G - Whatisyourreasonforcontactingme?
     new Date(timestamp),                       // H - Timestamp
-    formData.geolocation || 'Not provided'     // I - Geolocation
+    formData.geolocation || 'Not provided',    // I - Geolocation
+    googleMapsURL,                             // J - URL_Google_Maps
+    userIP,                                    // K - IP_Address
+    networkInfo,                               // L - Network
+    formData.device || 'Unknown',              // M - Device
+    formData.platform || 'Unknown'             // N - Platform
   ];
 }
 
@@ -228,7 +316,7 @@ function prepareRowData(formData) {
  * @param {number} rowNumber - nomor baris yang akan diformat
  */
 function formatNewRow(sheet, rowNumber) {
-  const range = sheet.getRange(rowNumber, 1, 1, 9);
+  const range = sheet.getRange(rowNumber, 1, 1, 14); // Update to 14 columns
   
   // Set border
   range.setBorder(true, true, true, true, true, true);
@@ -242,7 +330,7 @@ function formatNewRow(sheet, rowNumber) {
   phoneCell.setNumberFormat('@');
   
   // Auto-resize jika diperlukan
-  sheet.autoResizeColumns(1, 9);
+  sheet.autoResizeColumns(1, 14);
 }
 
 /**
@@ -294,7 +382,9 @@ function getDataStatistics() {
       return {
         totalSubmissions: 0,
         institutionTypes: {},
-        cities: {}
+        cities: {},
+        devices: {},
+        platforms: {}
       };
     }
     
@@ -302,13 +392,19 @@ function getDataStatistics() {
     const submissions = data.slice(1); // Skip header
     const institutionTypes = {};
     const cities = {};
+    const devices = {};
+    const platforms = {};
     
     submissions.forEach(row => {
       const institutionType = row[1]; // Column B
       const city = row[5]; // Column F
+      const device = row[12]; // Column M
+      const platform = row[13]; // Column N
       
       institutionTypes[institutionType] = (institutionTypes[institutionType] || 0) + 1;
       cities[city] = (cities[city] || 0) + 1;
+      devices[device] = (devices[device] || 0) + 1;
+      platforms[platform] = (platforms[platform] || 0) + 1;
     });
     
     return {
@@ -316,6 +412,8 @@ function getDataStatistics() {
       totalSubmissions: submissions.length,
       institutionTypes: institutionTypes,
       cities: cities,
+      devices: devices,
+      platforms: platforms,
       lastSubmission: submissions[submissions.length - 1][7] // Timestamp
     };
     
@@ -341,11 +439,12 @@ function testSubmission() {
     yourCity: 'Jakarta',
     whatIsYourReasonForContactingMe: 'This is a test submission for the Google Frontend Developer competition.',
     timestamp: new Date().toISOString(),
-    geolocation: '-6.2088, 106.8456'
+    geolocation: '-6.2088, 106.8456',
+    device: 'Desktop',
+    platform: 'Windows'
   };
   
   const result = submitForm(testData);
   console.log('Test result:', result);
   return result;
 }
-
